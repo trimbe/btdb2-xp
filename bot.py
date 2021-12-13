@@ -114,12 +114,16 @@ def find_and_click(file, attempts=1):
         attempt += 1
         time.sleep(1)
 
-def wait_for(file):
+def wait_for(file, timeout=0):
+    start = timer()
+
     while True:
         pos = find_template_center(file)
         if pos is not None:
             return pos
         time.sleep(0.5)
+        if timeout > 0 and timer() - start > timeout:
+            return None
 
 def send_key(title, key):
     hwnd = win32gui.FindWindow(None, title)
@@ -166,16 +170,13 @@ while True:
         if discard_pos is not None:
             click(discard_pos[0], discard_pos[1])
             state = 'discarding'
+            time.sleep(.5)
 
         if state == 'discarding':
-            back_pos = find_template_center('templates/back.png')
-            if back_pos is not None:
-                click(back_pos[0], back_pos[1])
-                state = 'idle'    
+            click(104, 300)
+            state = 'idle'
 
         time.sleep(2)
-
-
     
     need_restart = False
     found_battle = False
@@ -236,7 +237,7 @@ while True:
             time.sleep(10)
             wait_for('templates/battle.png')
             need_restart = True
-            status = 'idle'
+            state = 'idle'
             break
             
         # once we are in game, we no longer need to worry about disconnection errors
@@ -300,9 +301,9 @@ while True:
     if surrender_pos is not None:
         click(surrender_pos[0], surrender_pos[1])
         time.sleep(3)
-    checkmark_pos = find_template_center('templates/checkmark.png')
-    if checkmark_pos is not None:
-        click(checkmark_pos[0], checkmark_pos[1])
+        checkmark_pos = wait_for('templates/checkmark.png', 2)
+        if checkmark_pos is not None:
+            click(checkmark_pos[0], checkmark_pos[1])
 
     ok_pos = wait_for('templates/ok.png')
     click(ok_pos[0], ok_pos[1])
